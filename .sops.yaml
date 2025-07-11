@@ -1,0 +1,4 @@
+creation_rules:
+  - path_regex: .*secrets\.yaml*$
+    encrypted_regex: .*
+    age: age1cu8am99caz30fwscakuegesjd954yz73qj4nx7rdrpkmftnhvdaqk8ktvu # Alexandre
