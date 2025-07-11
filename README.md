@@ -12,10 +12,10 @@ This repo contains the files in order to deploy an argocd cluster easily using h
 
 ## Install tools
 
-sops : brew install sops
-helm : brew install helm
-helmfile : brew install helmfile
-helm-secrets : helm plugin install https://github.com/jkroepke/helm-secrets --version v4.6.5
+- sops : `brew install sops`
+- helm : `brew install helm`
+- helmfile : `brew install helmfile`
+- helm-secrets : `helm plugin install https://github.com/jkroepke/helm-secrets --version v4.6.5`
 
 ## Sops and Age configuration
 
