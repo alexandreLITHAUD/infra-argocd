@@ -1,0 +1,2 @@
+myargocd:
+  nameOverride: myargocd

@@ -10,7 +10,7 @@ templates:
     values:
       - values.yaml.gotmpl
 releases:
-  - name: my-argocd
+  - name: myargocd
     namespace: argocd
     chart: argo/argo-cd
     version: "8.1.3"
