@@ -22,6 +22,9 @@ myargocd:
       - name: custom-tools
         mountPath: /home/argocd/.local/share/helm/plugins
         subPath: helm-plugins
+      - name: custom-tools
+        mountPath: /home/argocd/cmp-server/plugins/helmfile
+        subPath: helmfile
     # Install Helmfile, SOPS, and Helm plugins
     initContainers:
       - name: install-tools
@@ -32,7 +35,7 @@ myargocd:
             set -e
 
             # Installer les outils requis
-            apk add --no-cache curl tar git
+            apk add --no-cache curl tar git age
 
             mkdir -p /custom-tools /custom-tools/helm-plugins
 
@@ -79,20 +82,13 @@ myargocd:
       create: true
       plugins:
         helmfile:
-          allowConcurrency: true
-          discover:
-            find:
-              command:
-                - sh
-                - -c
-                - "find . -name 'helmfile.yaml' -o -name 'helmfile.yml'"
           init:
-            command:
-              - sh
-              - -c
-              - "helmfile deps"
+            command: [sh]
+            args: ["-c", "helmfile deps"]
           generate:
-            command:
-              - sh
-              - -c
-              - "helmfile template --include-crds"
+            command: [sh]
+            args: ["-c", "helmfile template --include-crds"]
+          discover:
+            fileName: "helmfile.yaml"
+            find:
+              glob: "**/helmfile.yaml"
