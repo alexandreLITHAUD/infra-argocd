@@ -1,6 +1,8 @@
 repositories:
   - name: argo
     url: https://argoproj.github.io/argo-helm
+  - name: perso
+    url: https://alexandrelithaud.github.io/personal-useful-helm-charts/
 bases:
   - environments.yaml
 ---
@@ -10,9 +12,17 @@ templates:
     values:
       - values.yaml.gotmpl
 releases:
+  - name: raw-configuration
+    namespace: argocd
+    chart: perso/k8s-raw-configuration
+    version: "0.1.0"
+    inherit:
+      - template: default
   - name: myargocd
     namespace: argocd
     chart: argo/argo-cd
     version: "8.1.3"
     inherit:
       - template: default
+    needs:
+      - raw-configuration

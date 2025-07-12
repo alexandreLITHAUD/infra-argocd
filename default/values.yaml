@@ -1,2 +1,98 @@
 myargocd:
-  nameOverride: myargocd
+  repoServer:
+    # Mount your age key as a secret
+    volumes:
+      - name: age-key
+        secret:
+          secretName: argocd-age-key
+          defaultMode: 0400
+      - name: custom-tools
+        emptyDir: {}
+    volumeMounts:
+      - name: age-key
+        mountPath: /home/argocd/.config/sops/age
+        subPath: key.txt
+        readOnly: true
+      - name: custom-tools
+        mountPath: /usr/local/bin/helmfile
+        subPath: helmfile
+      - name: custom-tools
+        mountPath: /usr/local/bin/sops
+        subPath: sops
+      - name: custom-tools
+        mountPath: /home/argocd/.local/share/helm/plugins
+        subPath: helm-plugins
+    # Install Helmfile, SOPS, and Helm plugins
+    initContainers:
+      - name: install-tools
+        image: alpine:latest
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            set -e
+
+            # Installer les outils requis
+            apk add --no-cache curl tar git
+
+            mkdir -p /custom-tools /custom-tools/helm-plugins
+
+            # ➤ Télécharger Helmfile (ARM64)
+            curl -L https://github.com/helmfile/helmfile/releases/latest/download/helmfile_linux_arm64 -o /custom-tools/helmfile
+            chmod +x /custom-tools/helmfile
+
+            # ➤ Télécharger SOPS (ARM64)
+            SOPS_VERSION=$(curl -s https://api.github.com/repos/mozilla/sops/releases/latest | grep tag_name | cut -d '"' -f 4)
+            curl -L https://github.com/mozilla/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.arm64 -o /custom-tools/sops
+            chmod +x /custom-tools/sops
+
+            # ➤ Télécharger Helm (ARM64)
+            curl -L https://get.helm.sh/helm-v3.18.4-linux-arm64.tar.gz | tar xz
+            mv linux-arm64/helm /custom-tools/helm
+            chmod +x /custom-tools/helm
+
+            # ➤ Ajouter helm à $PATH
+            export PATH=$PATH:/custom-tools
+
+            # ➤ Définir les variables d'environnement helm
+            export HELM_PLUGINS=/custom-tools/helm-plugins
+            export HELM_CACHE_HOME=/tmp/.helm/cache
+            export HELM_CONFIG_HOME=/tmp/.helm/config
+            export HELM_DATA_HOME=/tmp/.helm/data
+            mkdir -p "$HELM_PLUGINS" "$HELM_CACHE_HOME" "$HELM_CONFIG_HOME" "$HELM_DATA_HOME"
+
+            # ➤ Installer les plugins Helm
+            helm plugin install https://github.com/jkroepke/helm-secrets --version v4.6.5
+            helm plugin install https://github.com/databus23/helm-diff --version v3.12.3
+        volumeMounts:
+          - name: custom-tools
+            mountPath: /custom-tools
+    # Set environment variables
+    env:
+      - name: HELM_PLUGINS
+        value: /home/argocd/.local/share/helm/plugins
+      - name: SOPS_AGE_KEY_FILE
+        value: /home/argocd/.config/sops/age/key.txt
+      - name: HELM_SECRETS_BACKEND
+        value: sops
+  configs:
+    cmp:
+      create: true
+      plugins:
+        helmfile:
+          allowConcurrency: true
+          discover:
+            find:
+              command:
+                - sh
+                - -c
+                - "find . -name 'helmfile.yaml' -o -name 'helmfile.yml'"
+          init:
+            command:
+              - sh
+              - -c
+              - "helmfile deps"
+          generate:
+            command:
+              - sh
+              - -c
+              - "helmfile template --include-crds"
