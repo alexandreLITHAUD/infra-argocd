@@ -5,7 +5,7 @@ myargocd:
       - name: age-secret-keys
         secret:
           secretName: argocd-age-key
-          defaultMode: 0600
+          defaultMode: 0444
       - name: helmfile-cmp-tmp
         emptyDir: {}
     extraContainers:
