@@ -26,3 +26,11 @@ releases:
       - template: default
     needs:
       - raw-configuration
+  - name: argocd-apps
+    namespace: argocd
+    chart: perso/k8s-raw-configuration
+    version: "0.1.0"
+    inherit:
+      - template: default
+    needs:
+      - myargocd
