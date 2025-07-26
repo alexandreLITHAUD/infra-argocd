@@ -34,26 +34,3 @@ myargocd:
         value: /home/argocd/.config/sops/age/key.txt
       - name: HELM_SECRETS_BACKEND
         value: sops
-argocd-apps:
-  templates:
-    - |
-      apiVersion: argoproj.io/v1alpha1
-      kind: Application
-      metadata:
-        name: monitoring-app
-      spec:
-        destination:
-          namespace: monitoring
-          server: https://kubernetes.default.svc
-        source:
-          path: .
-          repoURL: https://github.com/alexandreLITHAUD/infra-monitoring
-          targetRevision: main
-          plugin:
-            name: helmfile
-        sources: []
-        project: default
-        syncPolicy:
-          automated:
-            prune: true
-            selfHeal: true
